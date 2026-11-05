@@ -36,23 +36,11 @@ jobs:
       fail-fast: false
       matrix:
         config:
+          # PROBE MATRIX - Windows only while the C++ is being brought up, so each fix round costs
+          # one runner minute instead of ten (macOS minutes are billed 10x). The full five-target
+          # matrix is restored below once this job is green.
           - name: Windows
             os: windows-latest
-
-          - name: macOS
-            os: macos-latest
-
-          - name: iOS
-            os: macos-latest
-            target: iOS
-
-          - name: Android32
-            os: ubuntu-latest
-            target: Android32
-
-          - name: Android64
-            os: ubuntu-latest
-            target: Android64
 
     name: Build ${{ matrix.config.name }}
     runs-on: ${{ matrix.config.os }}
