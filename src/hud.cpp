@@ -44,7 +44,7 @@ namespace calium {
             std::vector<CCObject*> out;
             if (!arr) return out;
             out.reserve(arr->count());
-            for (unsigned int i = 0; i < arr->count(); ++i) out.push_back(arr->objectAt(i));
+            for (unsigned int i = 0; i < arr->count(); ++i) out.push_back(arr->getObject(i));
             return out;
         }
 
@@ -262,7 +262,7 @@ class $modify(PauseLayer) {
         if (!sprite) return;
         sprite->setScale(0.62f);
 
-        auto* item = cocos2d::CCMenuItemSpriteExtra::createSpriteExtra(
+        auto* item = geode::cocos::createSpriteExtra(
             sprite, [](CCMenuItemSpriteExtra*) {
                 // Two taps in a row would push two settings pages onto the stack, so the button
                 // removes itself for the duration of the open.
