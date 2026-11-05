@@ -279,13 +279,13 @@ class $modify(CCDirector) {
     }
 };
 
-class $modify("CaliumSpriteBatch", CCSpriteBatchNode) {
+class $modify(CCSpriteBatchNode) {
     void draw() {
         evaluateAndDraw(this, getTextureAtlas(), false, [this] { CCSpriteBatchNode::draw(); });
     }
 };
 
-class $modify("CaliumParticleBatch", CCParticleBatchNode) {
+class $modify(CCParticleBatchNode) {
     void draw() {
         evaluateAndDraw(this, getTextureAtlas(), true, [this] { CCParticleBatchNode::draw(); });
     }

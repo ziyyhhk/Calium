@@ -588,7 +588,7 @@ namespace calium {
 
                 if (cap.grab == core::GrabMethod::Disabled) {
                     cap.note = "MSAA backbuffer with no blit path";
-                    log::warn("[Calium] capture disabled: {} (GL '{}')", *cap.note, s);
+                    log::warn("[Calium] capture disabled: {} (GL '{}')", cap.note, s);
                 } else {
                     cap.note = core::grabMethodName(cap.grab);
                     log::info("[Calium] GL '{}' - grab via {}", s, core::grabMethodName(cap.grab));

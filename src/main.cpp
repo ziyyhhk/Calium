@@ -6,7 +6,9 @@
 // unload is anybody's guess.
 
 #include <array>
+#include <memory>
 #include <string>
+#include <string_view>
 
 #include <Geode/Geode.hpp>
 #include <Geode/loader/SettingV3.hpp>
@@ -83,9 +85,11 @@ $on_mod(Loaded) {
 
     log::info("[Calium] {}", calium::statusLine());
 
-    // Re-read the Config whenever anything in the settings changes. Going through settingReact,
-    // rather than one listener per key, means adding a setting never requires touching this file.
-    Mod::get()->settingReact([]() {
+    // Re-read the Config whenever anything in the settings changes. Going through the mod-wide
+    // settings event, rather than one listener per key, means adding a setting never requires
+    // touching this file. (Mod::settingReact is protected, so the public listener helper is the
+    // supported route.)
+    listenForAllSettingChanges([](std::string_view, std::shared_ptr<SettingV3>) {
         calium::reloadFromSettings();
         calium::requestGLRebuild();
     });

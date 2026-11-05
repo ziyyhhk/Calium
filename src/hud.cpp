@@ -219,7 +219,7 @@ namespace calium {
 
 using namespace calium;
 
-class $modify("CaliumPlayLayer", PlayLayer) {
+class $modify(PlayLayer) {
     struct Fields {
         StatsPanel* panel = nullptr;
     };
@@ -253,7 +253,7 @@ class $modify("CaliumPlayLayer", PlayLayer) {
     }
 };
 
-class $modify("CaliumPauseLayer", PauseLayer) {
+class $modify(PauseLayer) {
     void customSetup() {
         PauseLayer::customSetup();
         if (getChildByTag(kButtonTag)) return;
