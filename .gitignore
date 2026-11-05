@@ -1,0 +1,9 @@
+build/
+build-*/
+out/
+CMakeLists.txt.user
+CMakeSettings.json
+.idea/
+.vscode/
+*.geode
+!logo.png

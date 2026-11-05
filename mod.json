@@ -1,0 +1,325 @@
+{
+  "geode": "5.11.2",
+  "gd": {
+    "win": "2.2081",
+    "android": "2.2081",
+    "mac": "2.2081",
+    "ios": "2.2081"
+  },
+  "id": "calium.renderer",
+  "name": "Calium",
+  "version": "0.1.0",
+  "developer": "ziyyhhk",
+  "description": "Custom frame renderer for Geometry Dash: grabs the finished frame, runs it through your own GPU pass chain (bloom, colour grade, AA, lens effects) at a resolution you choose, and presents it. Everything is measured on screen.",
+  "tags": ["performance", "utility", "enhancement", "levels"],
+  "links": {
+    "source": "https://github.com/ziyyhhk/Calium"
+  },
+  "issues": {
+    "info": "Calium changes how the frame is composited, so a bug looks like a visual problem: wrong colours, a black border, or a screen that does not update. Describe what you see and which preset was on.",
+    "url": "https://github.com/ziyyhhk/Calium/issues"
+  },
+  "settings": {
+    "title-main": {
+      "type": "title",
+      "name": "Main"
+    },
+    "mod-enabled": {
+      "name": "Enable Calium",
+      "description": "Master switch. Off means the mod does not touch OpenGL at all and the game composites its own frame, exactly as without it. Turning it on is not enough by itself: pick a preset, or lower the render scale or switch an effect on, otherwise there is nothing for the extra passes to do.",
+      "type": "bool",
+      "default": false
+    },
+    "preset": {
+      "name": "Preset",
+      "description": "Performance: 0.75 scale, no effects - the fewest shaded pixels. Balanced: native scale plus AA. Quality: native plus AA, grade and bloom. Cinematic: 0.875 scale with the whole chain, sized to cost about the same as Quality. Custom: use the values below. A preset overrides the sliders but never the master switch.",
+      "type": "string",
+      "default": "Custom",
+      "one-of": ["Custom", "Performance", "Balanced", "Quality", "Cinematic"]
+    },
+
+    "title-resolution": {
+      "type": "title",
+      "name": "Resolution"
+    },
+    "render-scale": {
+      "name": "Render Scale",
+      "description": "Internal resolution as a fraction of the window. Everything between the grab and the final blit is shaded at this size, so 0.75 means 56% of the pixels. The image is scaled back up by the driver, which is why a small number looks soft rather than just faster.",
+      "type": "float",
+      "default": 1.0,
+      "min": 0.5,
+      "max": 1.0,
+      "precision": 3
+    },
+    "adaptive": {
+      "name": "Adaptive Scale",
+      "description": "Moves the render scale to hold your target frame time instead of a fixed value. It only reacts after a sustained streak, and only in 1/8 steps, so a single hitch or a loading pause cannot make it oscillate.",
+      "type": "bool",
+      "default": false
+    },
+    "adaptive-min": {
+      "name": "Lowest Adaptive Scale",
+      "description": "How far the adaptive controller is allowed to drop before it stops, so a heavy level cannot take the picture down to a slideshow resolution.",
+      "type": "float",
+      "default": 0.55,
+      "min": 0.35,
+      "max": 1.0,
+      "precision": 3
+    },
+    "adaptive-target-ms": {
+      "name": "Target Frame Time (ms)",
+      "description": "What the controller aims for. 16 or 17 is 60 fps, 8 is 120 fps, 33 is 30 fps. Match it to your screen refresh rate, otherwise the controller chases a target the display cannot show.",
+      "type": "int",
+      "default": 17,
+      "min": 5,
+      "max": 200
+    },
+
+    "title-effects": {
+      "type": "title",
+      "name": "Post-Processing"
+    },
+    "bloom": {
+      "name": "Bloom",
+      "description": "Bright pixels are extracted and blurred over two levels, then added back, so neon and portals glow outward. The blur runs at a quarter and an eighth of the render size, which is why it is affordable on a phone.",
+      "type": "bool",
+      "default": false
+    },
+    "bloom-threshold": {
+      "name": "Bloom Threshold",
+      "description": "How bright a pixel has to be to glow. Lower means more of the level blooms. Around 0.7 keeps lit neon and colour triggers glowing while leaving the background alone.",
+      "type": "float",
+      "default": 0.7,
+      "min": 0.0,
+      "max": 1.0,
+      "precision": 3
+    },
+    "bloom-intensity": {
+      "name": "Bloom Intensity",
+      "description": "How much of the blur is added back. Past about 1.5 the whole screen lifts towards white.",
+      "type": "float",
+      "default": 0.85,
+      "min": 0.0,
+      "max": 3.0,
+      "precision": 3
+    },
+    "bloom-radius": {
+      "name": "Bloom Radius",
+      "description": "The blur step in texels at the smallest level. Larger spreads the glow further for the same number of taps.",
+      "type": "float",
+      "default": 1.3,
+      "min": 0.5,
+      "max": 3.0,
+      "precision": 3
+    },
+    "grade": {
+      "name": "Colour Grade",
+      "description": "Exposure, lift, gamma, contrast and saturation, folded into the pass that already composites the frame, so it costs nothing extra.",
+      "type": "bool",
+      "default": false
+    },
+    "exposure": {
+      "name": "Exposure",
+      "description": "Multiplies the image before the curve. Above 1 lifts everything, including the blacks.",
+      "type": "float",
+      "default": 1.0,
+      "min": 0.5,
+      "max": 2.0,
+      "precision": 3
+    },
+    "contrast": {
+      "name": "Contrast",
+      "description": "Pushes away from mid grey. High contrast plus bloom is how a dark level starts to look like a lit one.",
+      "type": "float",
+      "default": 1.05,
+      "min": 0.5,
+      "max": 2.0,
+      "precision": 3
+    },
+    "saturation": {
+      "name": "Saturation",
+      "description": "1.0 is what the game drew. Below 1 fades towards grey, above 1 pushes GD's palette towards poster colours.",
+      "type": "float",
+      "default": 1.1,
+      "min": 0.0,
+      "max": 2.0,
+      "precision": 3
+    },
+    "gamma": {
+      "name": "Gamma",
+      "description": "Brightens the middle of the range without blowing out the top. Above 1 makes dark levels readable.",
+      "type": "float",
+      "default": 1.0,
+      "min": 0.5,
+      "max": 2.0,
+      "precision": 3
+    },
+    "lift": {
+      "name": "Lift",
+      "description": "Added to every pixel before the curve, so it raises the floor of the image. A small positive value is a washed-out film look; a negative one crushes blacks.",
+      "type": "float",
+      "default": 0.0,
+      "min": -0.2,
+      "max": 0.2,
+      "precision": 3
+    },
+    "fxaa": {
+      "name": "Edge Smoothing (AA)",
+      "description": "A compact luma-gradient smoother over the final image at display resolution. It is not FXAA 3.11 - that is a much larger shader - so it takes the sparkle out of thin diagonal edges without resolving every sub-pixel.",
+      "type": "bool",
+      "default": false
+    },
+    "sharpen": {
+      "name": "Sharpen",
+      "description": "An unsharp mask over the composite, which is worth having when the render scale is below 1 and the image has gone soft. Costs a few extra taps.",
+      "type": "bool",
+      "default": false
+    },
+    "sharpen-strength": {
+      "name": "Sharpen Amount",
+      "description": "How far the unsharp mask pushes the detail back. Past about 0.6 edges grow a white ring.",
+      "type": "float",
+      "default": 0.35,
+      "min": 0.0,
+      "max": 1.0,
+      "precision": 3
+    },
+    "vignette": {
+      "name": "Vignette",
+      "description": "Darkens towards the corners. It draws attention to the middle of the screen, which is also where the gameplay is.",
+      "type": "bool",
+      "default": false
+    },
+    "vignette-strength": {
+      "name": "Vignette Strength",
+      "description": "How much the corners are darkened.",
+      "type": "float",
+      "default": 0.3,
+      "min": 0.0,
+      "max": 1.0,
+      "precision": 3
+    },
+    "chromatic": {
+      "name": "Chromatic Split",
+      "description": "Offsets red and blue away from green by an amount that grows towards the edges, the way a real lens fringes.",
+      "type": "bool",
+      "default": false
+    },
+    "chromatic-strength": {
+      "name": "Chromatic Strength",
+      "description": "Size of the colour offset in pixels at the edge of the screen.",
+      "type": "float",
+      "default": 0.8,
+      "min": 0.0,
+      "max": 4.0,
+      "precision": 3
+    },
+
+    "title-culling": {
+      "type": "title",
+      "name": "Batch Culling (experimental)"
+    },
+    "cull-enabled": {
+      "name": "Skip Off-Screen Batches",
+      "description": "Measures each batch from the vertex data it is about to hand the GPU and skips the draw call when that box is provably outside the view. Every failure in the measurement means it draws the batch anyway. It is off by default because a culler that is wrong deletes pixels, and because GD packs most level geometry into atlases whose bounds span the whole level, so those are never candidates.",
+      "type": "bool",
+      "default": false
+    },
+    "cull-margin": {
+      "name": "Cull Margin (px)",
+      "description": "Extra world units kept around the visible area, so an object half off screen always stays.",
+      "type": "float",
+      "default": 96.0,
+      "min": 0.0,
+      "max": 512.0,
+      "precision": 1
+    },
+    "cull-max-extent": {
+      "name": "Largest Batch to Consider (px)",
+      "description": "Batches wider than this are not even measured, which is what keeps a level atlas from ever being culled. Raise it only if you know what is in the batches you are exposing.",
+      "type": "float",
+      "default": 1200.0,
+      "min": 100.0,
+      "max": 20000.0,
+      "precision": 0
+    },
+    "cull-particles": {
+      "name": "Cull Particle Batches",
+      "description": "Particle batches are local to where they emit, so they are the ones worth skipping and the safest thing this feature does.",
+      "type": "bool",
+      "default": true
+    },
+    "cull-sprites": {
+      "name": "Cull Sprite Batches",
+      "description": "Also measure the sprite atlases. Most are level-wide and will never be skipped, so this mostly costs measurement time. Leave it off unless the panel shows it doing something.",
+      "type": "bool",
+      "default": false
+    },
+
+    "title-advanced": {
+      "type": "title",
+      "name": "Advanced"
+    },
+    "grab-override": {
+      "name": "Frame Grab Method",
+      "description": "Auto probes the driver and picks the safe path: a blit when the window is multisampled and the platform can resolve it, otherwise a direct copy. Blit on a device that cannot do it, or Copy-tex on a multisampled window, is how a black screen happens, so only change this if the panel says the capture was refused.",
+      "type": "string",
+      "default": "Auto",
+      "one-of": ["Auto", "Copy-tex", "Blit", "Read-pixels"]
+    },
+    "sync-every-frame": {
+      "name": "Sync Every Frame",
+      "description": "Waits for the GPU at the end of every frame so the panel can show real GPU time instead of only CPU submission. It costs frames, because the wait is the thing being measured. Use it to compare two settings, then turn it back off.",
+      "type": "bool",
+      "default": false
+    },
+
+    "title-hud": {
+      "type": "title",
+      "name": "Panel & Hotkeys"
+    },
+    "hud-enabled": {
+      "name": "Show Stats Panel",
+      "description": "A small plate in the corner of a level with fps, frame time, the resolution actually being shaded, and how many batches were drawn versus skipped. It only appears in a level, not in menus.",
+      "type": "bool",
+      "default": true
+    },
+    "hud-corner": {
+      "name": "Panel Corner",
+      "description": "Which corner of the screen the panel sits in. Move it out of the way of the percentage counter or another mod's overlay.",
+      "type": "string",
+      "default": "Top right",
+      "one-of": ["Top left", "Top right", "Bottom left", "Bottom right"]
+    },
+    "toggle-mod-key": {
+      "name": "Hotkey: Toggle Calium",
+      "description": "Instant on and off, so you can compare the same level both ways in one run.",
+      "type": "keybind",
+      "default": {
+        "win": "Ctrl+Shift+C",
+        "mac": "Cmd+Shift+C"
+      },
+      "platforms": ["win", "mac"]
+    },
+    "cycle-preset-key": {
+      "name": "Hotkey: Next Preset",
+      "description": "Walks Custom, Performance, Balanced, Quality, Cinematic.",
+      "type": "keybind",
+      "default": {
+        "win": "Ctrl+Shift+P",
+        "mac": "Cmd+Shift+P"
+      },
+      "platforms": ["win", "mac"]
+    },
+    "toggle-hud-key": {
+      "name": "Hotkey: Toggle Panel",
+      "description": "Hides the stats plate without changing any of the rendering. Lasts until the next reload of the settings.",
+      "type": "keybind",
+      "default": {
+        "win": "Ctrl+Shift+F",
+        "mac": "Cmd+Shift+F"
+      },
+      "platforms": ["win", "mac"]
+    }
+  }
+}
