@@ -122,29 +122,29 @@ namespace calium::core {
         unsigned const step = lim.stride == 0 ? 1u : lim.stride;
         unsigned const ceiling = lim.maxQuads == 0 ? count : std::min(count, lim.maxQuads);
 
-        bool any = false;
-        unsigned i = 0;
-        for (; i < ceiling; i += step) {
+        unsigned visited = 0;
+        for (unsigned i = 0; i < ceiling; i += step) {
             QuadPos const& q = quads[i];
             if (!std::isfinite(q.tlX) || !std::isfinite(q.tlY)
              || !std::isfinite(q.brX) || !std::isfinite(q.brY)) {
                 // One corrupt quad invalidates the whole batch's bounds. Bail out honestly.
                 out.complete = false;
-                out.scanned  = i;
-                out.skipped  = count - i;
+                out.scanned  = visited;
+                out.skipped  = count > visited ? count - visited : 0u;
                 return out;
             }
             out.bounds.minX = std::min({ out.bounds.minX, q.tlX, q.brX });
             out.bounds.minY = std::min({ out.bounds.minY, q.tlY, q.brY });
             out.bounds.maxX = std::max({ out.bounds.maxX, q.tlX, q.brX });
             out.bounds.maxY = std::max({ out.bounds.maxY, q.tlY, q.brY });
-            any = true;
+            ++visited;
         }
 
-        unsigned const visitedEnd = std::min(ceiling, count);
-        out.scanned = any ? std::min(i, visitedEnd) : 0u;
-        out.skipped = count > out.scanned ? count - out.scanned : 0u;
-        out.complete = (visitedEnd >= count) && (step == 1u);
+        // scanned counts quads actually examined, which is not the loop's end index when the scan
+        // strides. skipped is everything not examined, so the two always add up to the real cost.
+        out.scanned = visited;
+        out.skipped = count > visited ? count - visited : 0u;
+        out.complete = (ceiling >= count) && (step == 1u);
         return out;
     }
 

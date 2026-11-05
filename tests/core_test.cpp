@@ -86,6 +86,7 @@ namespace {
         BoundsResult sr = boundsFromQuads(many.data(), 500, strided);
         check(!sr.complete, "strided scan is incomplete");
         checkEq(static_cast<double>(sr.scanned), 125.0, "strided scan visits a quarter");
+        checkEq(static_cast<double>(sr.skipped), 375.0, "strided scan accounts for the rest");
 
         // Regression: stride past the end must not underflow the skipped count.
         std::vector<QuadPos> five(5, QuadPos{0.f, 0.f, 1.f, 1.f});
@@ -230,8 +231,9 @@ namespace {
         bloom.bloom = true;
         Chain b = planChain(bloom, false);
         check(b.needsHalfRes, "bloom needs the half size target");
-        check(b.passes.size() == 4, "bloom chain is grab, bright, blur h, blur v, composite");
+        check(b.passes.size() == 5, "bloom chain is grab, bright, blur h, blur v, composite");
         check(b.passes[1] == Pass::Bright, "bright extract runs before the blurs");
+        check(b.passes.back() == Pass::Composite, "composite closes the bloom chain");
         check(b.passes[2] == Pass::BlurH && b.passes[3] == Pass::BlurV,
               "the two blur directions stay in h then v order");
         check(b.passes.back() == Pass::Composite, "bloom chain composites last when nothing follows");
@@ -248,7 +250,7 @@ namespace {
         Chain a = planChain(all, true);
         check(a.passes.front() == Pass::Grab && a.passes.back() == Pass::Fullscreen,
               "full chain is well ordered at both ends");
-        check(a.passes.size() == 5, "full chain pass count");
+        check(a.passes.size() == 6, "full chain pass count");
     }
 
     // ---------------------------------------------------------------- adaptive resolution
@@ -307,7 +309,7 @@ namespace {
         check(edge.scale >= cfg.min - 1e-6f, "cannot fall below min");
         checkEq(edge.scale, 0.5f, "sits at min and stays there");
 
-        checkEq(quantizeScale(0.9f, 0.5f, 1.0f), 0.875f, "0.9 snaps down to the 1/8 grid");
+        checkEq(quantizeScale(0.9f, 0.5f, 1.0f), 0.90625f, "0.9 snaps to the 1/64 grid");
         checkEq(quantizeScale(2.5f, 0.5f, 1.0f), 1.0f, "out of range clamps to max");
         checkEq(quantizeScale(std::nanf(""), 0.5f, 1.0f), 0.5f, "NaN collapses to min");
     }

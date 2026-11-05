@@ -26,6 +26,7 @@
 #include <Geode/modify/PlayLayer.hpp>
 #include <Geode/ui/GeodeUI.hpp>
 #include <Geode/ui/Label.hpp>
+#include <Geode/ui/NineSlice.hpp>
 #include <Geode/utils/cocos.hpp>
 
 #include <calium.hpp>
@@ -62,14 +63,15 @@ namespace calium {
                 ignoreAnchorPointForPosition(false);
                 setAnchorPoint({ 0.f, 0.f });
 
-                // GD's own dark rounded plate, stretched. Anything flatter reads as a debug overlay
-                // rather than as part of the game.
-                auto* bg = CCSprite::createWithSpriteFrameName("GJmenuRectangle_001.png");
+                // GD's own rounded panel, stretched as a nine-slice so the corners stay round at any
+                // width. Anything flatter reads as a debug overlay instead of part of the game.
+                auto* bg = NineSlice::createWithSpriteFrameName("square01_001.png");
                 if (!bg) return false;
                 bg->setOpacity(150);
                 bg->setAnchorPoint({ 0.f, 0.f });
                 bg->ignoreAnchorPointForPosition(false);
-                bg->setPosition(CCPoint::ZERO);
+                bg->setPosition({ 0.f, 0.f });
+                bg->setContentSize({ m_width, m_height });
                 addChild(bg, -1);
                 m_bg = bg;
 
@@ -160,17 +162,13 @@ namespace calium {
 
             void fitPlate() {
                 if (!m_bg) return;
-                auto* sprite = static_cast<CCSprite*>(m_bg);
-                cocos2d::CCSize const natural = sprite->getContentSize();
-                if (natural.width < 1.f || natural.height < 1.f) return;
-                sprite->setScaleX(m_width / natural.width);
-                sprite->setScaleY(m_height / natural.height);
+                m_bg->setContentSize({ m_width, m_height });
                 for (auto& e : m_labels) {
                     e.label->setPosition({ 8.f, m_height * 0.5f + e.y });
                 }
             }
 
-            CCNode* m_bg = nullptr;
+            NineSlice* m_bg = nullptr;
             float m_width = kPlateWidthMobile;
             float m_height = 52.f;
 
@@ -199,7 +197,7 @@ namespace calium {
                 for (auto* obj : childrenOf(parent ? parent->getChildren() : nullptr)) {
                     auto* node = dynamic_cast<CCNode*>(obj);
                     if (!node || node == menu || !node->isVisible()) continue;
-                    auto const p = node->convertToWorldSpaceAR(CCPoint::ZERO);
+                    auto const p = node->convertToWorldSpaceAR(CCPoint{0.f, 0.f});
                     if (std::fabs(p.x - s.x) < gap && std::fabs(p.y - s.y) < gap) {
                         free = false;
                         break;

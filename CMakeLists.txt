@@ -14,7 +14,6 @@ add_library(${PROJECT_NAME} SHARED
   src/main.cpp
   src/config.cpp
   src/glcore.cpp
-  src/shaders.cpp
   src/hooks.cpp
   src/hud.cpp
 )
